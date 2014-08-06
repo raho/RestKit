@@ -88,6 +88,24 @@ static NSArray *RKEntityIdentificationAttributeNames()
     return [NSArray arrayWithObjects:@"identifier", @"id", @"ID", @"URL", @"url", nil];
 }
 
+static NSAttributeDescription *hackAttributeByName(NSEntityDescription *entity, NSString *name) {
+    for (NSAttributeDescription *attr in entity.attributesByName.allValues) {
+        if ([attr.name isEqualToString:name]) {
+            return attr;
+        }
+    }
+    return nil;
+}
+
+static NSEntityDescription *hackEntityByName(NSManagedObjectModel *managedObjectModel, NSString *name) {
+    for (NSEntityDescription *entity in managedObjectModel.entities) {
+        if ([entity.name isEqualToString:name]) {
+            return entity;
+        }
+    }
+    return nil;
+}
+
 static NSArray *RKArrayOfAttributesForEntityFromAttributesOrNames(NSEntityDescription *entity, NSArray *attributesOrNames)
 {
     NSMutableArray *attributes = [NSMutableArray arrayWithCapacity:[attributesOrNames count]];
@@ -96,7 +114,7 @@ static NSArray *RKArrayOfAttributesForEntityFromAttributesOrNames(NSEntityDescri
             if (! [[entity properties] containsObject:attributeOrName]) [NSException raise:NSInvalidArgumentException format:@"Invalid attribute value '%@' given for entity identifer: not found in the '%@' entity", attributeOrName, [entity name]];
             [attributes addObject:attributeOrName];
         } else if ([attributeOrName isKindOfClass:[NSString class]]) {
-            NSAttributeDescription *attribute = [[entity attributesByName] valueForKey:attributeOrName];
+            NSAttributeDescription *attribute = hackAttributeByName(entity, (NSString*) attributeOrName);
             if (!attribute) [NSException raise:NSInvalidArgumentException format:@"Invalid attribute '%@': no attribute was found for the given name in the '%@' entity.", attributeOrName, [entity name]];
             [attributes addObject:attribute];
         } else {
@@ -154,7 +172,7 @@ static BOOL entityIdentificationInferenceEnabled = YES;
 {
     NSParameterAssert(entityName);
     NSParameterAssert(managedObjectStore);
-    NSEntityDescription *entity = [[managedObjectStore.managedObjectModel entitiesByName] objectForKey:entityName];
+    NSEntityDescription *entity = hackEntityByName(managedObjectStore.managedObjectModel, entityName);
     NSAssert(entity, @"Unable to find an Entity with the name '%@' in the managed object model", entityName);
     return [[self alloc] initWithEntity:entity];
 }
